@@ -826,17 +826,17 @@ def metrics(
     metrics = _pd.DataFrame()
     metrics["Start Period"] = _pd.Series(s_start)
     metrics["End Period"] = _pd.Series(s_end)
-    metrics["Risk-Free Rate %"] = _pd.Series(s_rf) * 100
-    metrics["Time in Market %"] = _stats.exposure(df, prepare_returns=False) * pct
-
-    metrics["~"] = blank
 
     if compounded:
+        cum_return = _stats.comp(df)
         metrics["Cumulative Return %"] = (_stats.comp(df) * pct).map("{:,.2f}".format)
     else:
         metrics["Total Return %"] = (df.sum() * pct).map("{:,.2f}".format)
 
-    metrics["CAGR﹪%"] = _stats.cagr(df, rf, compounded) * pct
+    #metrics["CAGR﹪%"] = _stats.cagr(df, rf, compounded) * pct
+    days_in_mkt = (df != 0).sum()
+    metrics["Annual Return %"] = (
+        (cum_return + 1)**(1 / (days_in_mkt / win_year)) - 1) * pct
 
     metrics["~~~~~~~~~~~~~~"] = blank
 
@@ -1055,12 +1055,14 @@ def metrics(
                 greeks = _stats.greeks(
                     df["returns"], df["benchmark"], win_year, prepare_returns=False
                 )
-                metrics["Beta"] = [str(round(greeks["beta"], 2)), "-"]
-                metrics["Alpha"] = [str(round(greeks["alpha"], 2)), "-"]
+                metrics["Beta (1y)"] = [str(round(greeks["beta (1y)"], 2)), "-"]
+                metrics["Alpha (1y)"] = [str(round(greeks["alpha (1y)"], 2)), "-"]
                 metrics["Correlation"] = [
                     str(round(df["benchmark"].corr(df["returns"]) * pct, 2)) + "%",
                     "-",
                 ]
+
+
                 metrics["Treynor Ratio"] = [
                     str(
                         round(
@@ -1084,10 +1086,11 @@ def metrics(
                     )
                     for strategy_col in df_strategy_columns
                 ]
-                metrics["Beta"] = [str(round(g["beta"], 2)) for g in greeks] + ["-"]
-                metrics["Alpha"] = [str(round(g["alpha"], 2)) for g in greeks] + ["-"]
+                metrics["Beta (1y)"] = [str(round(g["beta (1y)"], 2)) for g in greeks] + ["-"]
+                metrics["Alpha (1y)"] = [str(round(g["alpha (1y)"], 2)) for g in greeks] + ["-"]
                 metrics["Correlation"] = (
                     [
+
                         str(round(df["benchmark"].corr(df[strategy_col]) * pct, 2))
                         + "%"
                         for strategy_col in df_strategy_columns

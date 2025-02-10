@@ -912,13 +912,18 @@ def information_ratio(returns, benchmark, prepare_returns=True):
 
 
 def greeks(returns, benchmark, periods=252.0, prepare_returns=True):
-    """Calculates alpha and beta of the portfolio"""
+    """Calculates alpha and beta of the portfolio for the last year"""
     # ----------------------------
     # data cleanup
     if prepare_returns:
         returns = _utils._prepare_returns(returns)
     benchmark = _utils._prepare_benchmark(benchmark, returns.index)
-    # ----------------------------
+
+    # Get last year of data
+    last_date = returns.index[-1]
+    year_ago = last_date - _pd.DateOffset(years=1)
+    returns = returns[returns.index >= year_ago]
+    benchmark = benchmark[benchmark.index >= year_ago]
 
     # find covariance
     matrix = _np.cov(returns, benchmark)
@@ -930,9 +935,8 @@ def greeks(returns, benchmark, periods=252.0, prepare_returns=True):
 
     return _pd.Series(
         {
-            "beta": beta,
-            "alpha": alpha,
-            # "vol": _np.sqrt(matrix[0, 0]) * _np.sqrt(periods)
+            "beta (1y)": beta,
+            "alpha (1y)": alpha,
         }
     ).fillna(0)
 
